@@ -1,0 +1,108 @@
+-- LocalScript (Delta / Roblox)
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- === GUI SETUP ===
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "HeightDisplay"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game.CoreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 340, 0, 120)
+frame.Position = UDim2.new(0.5, -170, 0.1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BackgroundTransparency = 0.2
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local textLabel = Instance.new("TextLabel")
+textLabel.Size = UDim2.new(1, -20, 0, 60)
+textLabel.Position = UDim2.new(0, 10, 0, 5)
+textLabel.BackgroundTransparency = 1
+textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+textLabel.Font = Enum.Font.SourceSansBold
+textLabel.TextScaled = true
+textLabel.Text = "Menghitung tinggi..."
+textLabel.Parent = frame
+
+local copyButton = Instance.new("TextButton")
+copyButton.Size = UDim2.new(0, 140, 0, 35)
+copyButton.Position = UDim2.new(0.5, -70, 1, -40)
+copyButton.BackgroundColor3 = Color3.fromRGB(50, 120, 220)
+copyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+copyButton.Font = Enum.Font.SourceSansBold
+copyButton.TextScaled = true
+copyButton.Text = "Copy"
+copyButton.Parent = frame
+
+-- === VARIABEL SIMPAN TINGGI ===
+local lastHeight = nil
+
+-- === HITUNG TINGGI AVATAR ===
+local function getAvatarHeight(character)
+    local head = character:FindFirstChild("Head")
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if head and humanoidRootPart then
+        local footOffset = 2
+        local height = (head.Position.Y - (humanoidRootPart.Position.Y - footOffset))
+        return height -- angka full (double/float)
+    end
+    return nil
+end
+
+local function updateHeight()
+    local character = player.Character
+    if character then
+        local height = getAvatarHeight(character)
+        if height then
+            lastHeight = height
+            local meters = height * 0.28
+            textLabel.Text = 
+                "Tinggi Avatar:\n" ..
+                tostring(height) .. " studs\n" ..
+                "(" .. tostring(meters) .. " m)"
+        else
+            textLabel.Text = "⚠️ Gagal menghitung tinggi"
+            lastHeight = nil
+        end
+    else
+        textLabel.Text = "Karakter belum muncul..."
+        lastHeight = nil
+    end
+end
+
+-- === COPY BUTTON ACTION ===
+copyButton.MouseButton1Click:Connect(function()
+    if lastHeight then
+        local copyValue = tostring(lastHeight)
+        if setclipboard then
+            setclipboard(copyValue)
+            copyButton.Text = "Copied!"
+            task.delay(1.5, function()
+                copyButton.Text = "Copy"
+            end)
+        else
+            copyButton.Text = "No Clipboard"
+            task.delay(1.5, function()
+                copyButton.Text = "Copy"
+            end)
+        end
+    else
+        copyButton.Text = "No Value"
+        task.delay(1.5, function()
+            copyButton.Text = "Copy"
+        end)
+    end
+end)
+
+-- Jalankan saat karakter muncul
+if player.Character then
+    task.wait(0.5)
+    updateHeight()
+end
+
+player.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    updateHeight()
+end)
